@@ -25,6 +25,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-vcpkg-
 
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        architecture: 'x64'
+      id: install-python
+      run: |
+        echo "Python version: ${{ steps.install-python.outputs.python-version }}"
+        echo "Python installation path: ${{ steps.install-python.outputs.python-path }}"
+
     - name: Install vcpkg
       run: |
         git clone https://github.com/microsoft/vcpkg.git
@@ -48,7 +58,3 @@ jobs:
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: build/*.*
-
