@@ -8,11 +8,22 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # Usa l'ultima versione disponibile di Windows
+    runs-on: windows-latest
+    timeout-minutes: 180  # Incrementa se necessario, dipende dalla complessità del progetto
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Cache vcpkg libraries
+      uses: actions/cache@v3
+      with:
+        path: |
+          D:/a/titan-1/titan-1/vcpkg/installed
+          !D:/a/titan-1/titan-1/vcpkg/packages
+        key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-
 
     - name: Install vcpkg
       run: |
@@ -22,10 +33,10 @@ jobs:
 
     - name: Install dependencies with vcpkg
       run: |
-        .\vcpkg\vcpkg install fmt:x64-windows
-        .\vcpkg\vcpkg install llvm:x64-windows
-        .\vcpkg\vcpkg install triton:x64-windows
-        .\vcpkg\vcpkg install range-v3:x64-windows
+        .\vcpkg\vcpkg install fmt:x64-windows --debug
+        .\vcpkg\vcpkg install llvm:x64-windows --debug
+        .\vcpkg\vcpkg install triton:x64-windows --debug
+        .\vcpkg\vcpkg install range-v3:x64-windows --debug
 
     - name: Configure CMake with vcpkg toolchain
       run: |
@@ -39,5 +50,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
-        path: build/*.*  
+        path: build/*.*
 
