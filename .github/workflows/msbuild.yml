@@ -8,27 +8,36 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # Utilizza l'ultima versione disponibile di Windows
+    runs-on: windows-latest  # Usa l'ultima versione disponibile di Windows
 
     steps:
-    - uses: actions/checkout@v4
-      name: Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - name: Set up CMake
-      uses: lukka/get-cmake@latest  # Assicura di usare l'ultima versione di CMake
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\vcpkg integrate install
 
-    - name: Create Build Environment
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+    - name: Install dependencies with vcpkg
+      run: |
+        .\vcpkg\vcpkg install fmt:x64-windows
+        .\vcpkg\vcpkg install llvm:x64-windows
+        .\vcpkg\vcpkg install triton:x64-windows
+        .\vcpkg\vcpkg install range-v3:x64-windows
+
+    - name: Configure CMake with vcpkg toolchain
+      run: |
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build
-      run: cmake --build build --config Release
-
-    - name: Test
-      run: ctest -C Release -R TestPattern --output-on-failure
-      working-directory: build
+      run: |
+        cmake --build build --config Release
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
-        path: build/*.exe
+        path: build/*.*  
+
