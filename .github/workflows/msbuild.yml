@@ -9,45 +9,49 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 180  # Incrementa se necessario, dipende dalla complessità del progetto
+    timeout-minutes: 180
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Cache vcpkg libraries
+      id: cache-vcpkg
       uses: actions/cache@v3
       with:
         path: |
-          D:/a/titan-1/titan-1/vcpkg/installed
-          !D:/a/titan-1/titan-1/vcpkg/packages
+          D:/a/_work/titan-1/titan-1/vcpkg/installed
+          !D:/a/_work/titan-1/titan-1/vcpkg/packages
         key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
         restore-keys: |
           ${{ runner.os }}-vcpkg-
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        architecture: 'x64'
-
-    - name: Check Python Installation
-      run: |
-        python --version
-        where python
-
-    - name: Install vcpkg
+    - name: Install vcpkg if not cached
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
       run: |
         git clone https://github.com/microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
         .\vcpkg\vcpkg integrate install
 
-    - name: Install dependencies with vcpkg
-      run: |
-        .\vcpkg\vcpkg install fmt:x64-windows --debug
-        .\vcpkg\vcpkg install llvm:x64-windows --debug
-        .\vcpkg\vcpkg install triton:x64-windows --debug
-        .\vcpkg\vcpkg install range-v3:x64-windows --debug
+    - name: Install Python with vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: .\vcpkg\vcpkg install python3:x64-windows --debug
+
+    - name: Install fmt with vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: .\vcpkg\vcpkg install fmt:x64-windows --debug
+
+    - name: Install llvm with vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: .\vcpkg\vcpkg install llvm:x64-windows --debug
+
+    - name: Install triton with vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: .\vcpkg\vcpkg install triton:x64-windows --debug
+
+    - name: Install range-v3 with vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: .\vcpkg\vcpkg install range-v3:x64-windows --debug
 
     - name: Configure CMake with vcpkg toolchain
       run: |
